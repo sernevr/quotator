@@ -1,8 +1,12 @@
 # Dependencies
 node_modules/
 vendor/
+package-lock.json
+go.sum
+Cargo.lock
 
 # Build outputs
+out/
 target/
 dist/
 build/
@@ -13,19 +17,26 @@ debug/
 *.pdb
 **/mutants.out*/
 
-# Go
+# Go binaries
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
+crawler/crawler
 
 # Database
 data/*.db
 data/*.db-journal
 data/*.db-wal
+data/*.db-shm
 *.sqlite
 *.sqlite3
+
+# Runtime files
+data/logs/
+data/*.pid
+data/*.log
 
 # Environment
 .env
@@ -42,9 +53,11 @@ data/*.db-wal
 # OS
 .DS_Store
 Thumbs.db
+._*
 
 # Logs
 *.log
+logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -52,6 +65,14 @@ yarn-error.log*
 # Docker
 .docker/
 
+# Testing & Reports
+reports/
+coverage/
+*.coverage
+.nyc_output/
+htmlcov/
+
 # Local dev
 .cache/
 tmp/
+temp/

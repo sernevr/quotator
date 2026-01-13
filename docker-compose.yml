@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: quotator-frontend
+    ports:
+      - "3847:3847"
+    depends_on:
+      - api
+    networks:
+      - quotator-net
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: quotator-api
+    ports:
+      - "3848:3848"
+    volumes:
+      - quotator-data:/app/data
+    depends_on:
+      - crawler
+    networks:
+      - quotator-net
+    environment:
+      - RUST_LOG=info
+    restart: unless-stopped
+
+  crawler:
+    build:
+      context: ./crawler
+      dockerfile: Dockerfile
+    container_name: quotator-crawler
+    ports:
+      - "3849:3849"
+    volumes:
+      - quotator-data:/app/data
+    networks:
+      - quotator-net
+    restart: unless-stopped
+
+networks:
+  quotator-net:
+    driver: bridge
+
+volumes:
+  quotator-data:
+    driver: local

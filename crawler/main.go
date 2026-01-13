@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
@@ -16,11 +15,17 @@ import (
 )
 
 const (
-	dbPath     = "../data/quotator.db"
-	port       = ":3849"
-	region     = "tr-istanbul-1"
-	huaweiBase = "https://console.huaweicloud.com"
+	defaultDBPath = "/app/data/quotator.db"
+	port          = ":3849"
+	region        = "tr-istanbul-1"
 )
+
+func getDBPath() string {
+	if path := os.Getenv("DB_PATH"); path != "" {
+		return path
+	}
+	return defaultDBPath
+}
 
 // Pricing structures
 type Flavor struct {
@@ -82,6 +87,9 @@ func main() {
 }
 
 func initDB() error {
+	dbPath := getDBPath()
+	log.Printf("Using database: %s", dbPath)
+
 	// Ensure data directory exists
 	dataDir := filepath.Dir(dbPath)
 	if err := os.MkdirAll(dataDir, 0755); err != nil {
@@ -273,35 +281,3 @@ func saveDiskType(d DiskType) error {
 	return err
 }
 
-// Future: Actual Huawei Cloud API integration
-// This would require OAuth2 authentication and proper API endpoints
-func fetchHuaweiPricing() error {
-	// Huawei Cloud Pricing API requires authentication
-	// API endpoint: https://pricing.ap-southeast-1.myhuaweicloud.com/v1.0/products
-	// This is a placeholder for actual API integration
-
-	client := &http.Client{Timeout: 30 * time.Second}
-
-	// Example of how the actual API call would look:
-	// req, err := http.NewRequest("GET", "https://pricing.tr-istanbul-1.myhuaweicloud.com/v1.0/products", nil)
-	// req.Header.Set("X-Auth-Token", authToken)
-	// resp, err := client.Do(req)
-
-	_ = client // Suppress unused variable warning
-	return nil
-}
-
-func fetchURL(url string) ([]byte, error) {
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Get(url)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("HTTP %d", resp.StatusCode)
-	}
-
-	return io.ReadAll(resp.Body)
-}

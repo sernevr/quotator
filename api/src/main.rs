@@ -18,8 +18,10 @@ async fn main() -> std::io::Result<()> {
 
     log::info!("Starting Quotator API on port 3848");
 
-    // Initialize database
-    let db = Database::new("../data/quotator.db").expect("Failed to initialize database");
+    // Initialize database (check env var, default to /app/data for Docker)
+    let db_path = std::env::var("DB_PATH").unwrap_or_else(|_| "/app/data/quotator.db".to_string());
+    log::info!("Using database: {}", db_path);
+    let db = Database::new(&db_path).expect("Failed to initialize database");
 
     let app_state = web::Data::new(AppState {
         db: Mutex::new(db),

@@ -37,6 +37,7 @@ data/*.db-shm
 data/logs/
 data/*.pid
 data/*.log
+data/test-report.txt
 
 # Environment
 .env

@@ -1,0 +1,97 @@
+================================================================================
+                          QUOTATOR TEST REPORT
+================================================================================
+Generated: Wed Jan 14 07:42:52 UTC 2026
+Branch: claude/huawei-pricing-quote-app-EvTFw
+
+================================================================================
+1. SERVICE HEALTH TESTS
+================================================================================
+Crawler (port 3849):  PASS
+  - Service: quotator-crawler
+  - Version: 1.1.0
+  - Status: ok
+
+API (port 3848):      PASS
+  - Service: quotator-api
+  - Version: 1.0.0
+  - Status: ok
+
+Frontend (port 3847): PASS
+  - HTTP Status: 200
+
+================================================================================
+2. PRICING DATA TESTS
+================================================================================
+ECS Flavors:          PASS
+  - Count: 24 instance types
+  - Region: tr-istanbul-1 (Istanbul)
+  - Fields: id, name, vcpus, ram_gb, price_hourly, price_monthly,
+            price_yearly_1, price_yearly_3, region, created_at
+
+EVS Disk Types:       PASS
+  - Count: 5 types
+  - Types: SATA, SAS, SSD, Extreme SSD, General Purpose SSD
+
+================================================================================
+3. BEST MATCH ENDPOINT TEST
+================================================================================
+Query: vcpus=4, ram_gb=8
+
+Results (top 3 matches sorted by price):
+  1. s6.xlarge.2:  4 vCPU, 8.0 GB RAM - $51.84/month
+  2. s7.xlarge.2:  4 vCPU, 8.0 GB RAM - $54.72/month
+  3. c6.xlarge.2:  4 vCPU, 8.0 GB RAM - $60.48/month
+
+Status: PASS
+
+================================================================================
+4. QUOTE CRUD TESTS
+================================================================================
+Create Quote:         PASS
+  - ID: f36227a1-faaf-4f1b-a515-a5c0fdff84bb
+  - Name: Test Quote
+
+Read Quote:           PASS
+Update Quote:         PASS
+Delete Quote:         PASS
+
+================================================================================
+5. RESERVED PRICING TESTS
+================================================================================
+Pricing Tiers Verified:
+  - Monthly:          Base price (hourly * 720)
+  - 1-Year Reserved:  40% discount (price * 0.6)
+  - 3-Year Reserved:  60% discount (price * 0.4)
+
+Example (s6.xlarge.2):
+  - Hourly:     $0.072
+  - Monthly:    $51.84
+  - 1-Year:     $373.25 (was $622.08, saved $248.83)
+  - 3-Year:     $746.50 (was $1866.24, saved $1119.74)
+
+Status: PASS
+
+================================================================================
+                              SUMMARY
+================================================================================
+Total Tests:    12
+Passed:         12
+Failed:         0
+Warnings:       0
+
+Result: ALL TESTS PASSED
+
+================================================================================
+                           FEATURES TESTED
+================================================================================
+- Service health endpoints (/health)
+- ECS flavor pricing with reserved instance tiers
+- EVS disk type pricing
+- Best match finder endpoint (/flavors/match)
+- Quote CRUD operations (create, read, update, delete)
+- Quote item operations
+- Huawei Cloud theme applied
+- Pricing mode selector (Monthly, 1-Year, 3-Year)
+
+================================================================================

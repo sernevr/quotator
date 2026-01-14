@@ -7,6 +7,9 @@ pub struct Flavor {
     pub vcpus: i32,
     pub ram_gb: f64,
     pub price_hourly: f64,
+    pub price_monthly: f64,
+    pub price_yearly_1: f64,
+    pub price_yearly_3: f64,
     pub region: String,
     pub created_at: String,
 }
@@ -94,4 +97,10 @@ pub struct UpdateQuoteItem {
 pub struct PricingData {
     pub flavors: Vec<Flavor>,
     pub disk_types: Vec<DiskType>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct BestMatchQuery {
+    pub vcpus: i32,
+    pub ram_gb: f64,
 }

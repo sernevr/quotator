@@ -9,7 +9,6 @@ pub struct Database {
 
 impl Database {
     pub fn new(db_path: &str) -> Result<Self> {
-        // Ensure parent directory exists
         if let Some(parent) = Path::new(db_path).parent() {
             std::fs::create_dir_all(parent).ok();
         }
@@ -17,7 +16,6 @@ impl Database {
         let conn = Connection::open(db_path)?;
         let db = Database { conn };
         db.init_schema()?;
-        db.seed_sample_data()?;
         Ok(db)
     }
 
@@ -30,6 +28,9 @@ impl Database {
                 vcpus INTEGER NOT NULL,
                 ram_gb REAL NOT NULL,
                 price_hourly REAL NOT NULL,
+                price_monthly REAL NOT NULL DEFAULT 0,
+                price_yearly_1 REAL NOT NULL DEFAULT 0,
+                price_yearly_3 REAL NOT NULL DEFAULT 0,
                 region TEXT NOT NULL,
                 created_at TEXT NOT NULL
             );
@@ -75,66 +76,10 @@ impl Database {
         Ok(())
     }
 
-    fn seed_sample_data(&self) -> Result<()> {
-        // Check if data already exists
-        let count: i32 = self.conn.query_row(
-            "SELECT COUNT(*) FROM flavors",
-            [],
-            |row| row.get(0),
-        )?;
-
-        if count > 0 {
-            return Ok(());
-        }
-
-        let now = chrono::Utc::now().to_rfc3339();
-
-        // Sample ECS flavors for Istanbul region (based on Huawei Cloud naming)
-        let flavors = vec![
-            ("s6.small.1", "s6.small.1", 1, 1.0, 0.0120),
-            ("s6.medium.2", "s6.medium.2", 1, 2.0, 0.0180),
-            ("s6.large.2", "s6.large.2", 2, 4.0, 0.0360),
-            ("s6.xlarge.2", "s6.xlarge.2", 4, 8.0, 0.0720),
-            ("s6.2xlarge.2", "s6.2xlarge.2", 8, 16.0, 0.1440),
-            ("s6.4xlarge.2", "s6.4xlarge.2", 16, 32.0, 0.2880),
-            ("c6.large.2", "c6.large.2", 2, 4.0, 0.0420),
-            ("c6.xlarge.2", "c6.xlarge.2", 4, 8.0, 0.0840),
-            ("c6.2xlarge.2", "c6.2xlarge.2", 8, 16.0, 0.1680),
-            ("c6.4xlarge.2", "c6.4xlarge.2", 16, 32.0, 0.3360),
-            ("m6.large.8", "m6.large.8", 2, 16.0, 0.0600),
-            ("m6.xlarge.8", "m6.xlarge.8", 4, 32.0, 0.1200),
-            ("m6.2xlarge.8", "m6.2xlarge.8", 8, 64.0, 0.2400),
-        ];
-
-        for (id, name, vcpus, ram_gb, price) in flavors {
-            self.conn.execute(
-                "INSERT OR IGNORE INTO flavors (id, name, vcpus, ram_gb, price_hourly, region, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-                params![id, name, vcpus, ram_gb, price, "tr-istanbul-1", &now],
-            )?;
-        }
-
-        // Sample EVS disk types
-        let disk_types = vec![
-            ("ssd", "SSD", 0.12),
-            ("sas", "SAS", 0.06),
-            ("sata", "SATA", 0.03),
-            ("essd", "Extreme SSD", 0.20),
-        ];
-
-        for (id, name, price) in disk_types {
-            self.conn.execute(
-                "INSERT OR IGNORE INTO disk_types (id, name, price_per_gb, region, created_at) VALUES (?1, ?2, ?3, ?4, ?5)",
-                params![id, name, price, "tr-istanbul-1", &now],
-            )?;
-        }
-
-        Ok(())
-    }
-
     // Flavor operations
     pub fn get_flavors(&self) -> Result<Vec<Flavor>> {
         let mut stmt = self.conn.prepare(
-            "SELECT id, name, vcpus, ram_gb, price_hourly, region, created_at FROM flavors ORDER BY vcpus, ram_gb"
+            "SELECT id, name, vcpus, ram_gb, price_hourly, price_monthly, price_yearly_1, price_yearly_3, region, created_at FROM flavors ORDER BY vcpus, ram_gb"
         )?;
 
         let flavors = stmt.query_map([], |row| {
@@ -144,20 +89,43 @@ impl Database {
                 vcpus: row.get(2)?,
                 ram_gb: row.get(3)?,
                 price_hourly: row.get(4)?,
-                region: row.get(5)?,
-                created_at: row.get(6)?,
+                price_monthly: row.get(5)?,
+                price_yearly_1: row.get(6)?,
+                price_yearly_3: row.get(7)?,
+                region: row.get(8)?,
+                created_at: row.get(9)?,
             })
         })?.collect::<Result<Vec<_>>>()?;
 
         Ok(flavors)
     }
 
-    pub fn upsert_flavor(&self, flavor: &Flavor) -> Result<()> {
-        self.conn.execute(
-            "INSERT OR REPLACE INTO flavors (id, name, vcpus, ram_gb, price_hourly, region, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-            params![flavor.id, flavor.name, flavor.vcpus, flavor.ram_gb, flavor.price_hourly, flavor.region, flavor.created_at],
+    // Find best matching flavors for given CPU/RAM requirements
+    pub fn find_best_match(&self, vcpus: i32, ram_gb: f64) -> Result<Vec<Flavor>> {
+        let mut stmt = self.conn.prepare(
+            r#"SELECT id, name, vcpus, ram_gb, price_hourly, price_monthly, price_yearly_1, price_yearly_3, region, created_at
+               FROM flavors
+               WHERE vcpus >= ?1 AND ram_gb >= ?2
+               ORDER BY price_hourly ASC
+               LIMIT 5"#
         )?;
-        Ok(())
+
+        let flavors = stmt.query_map(params![vcpus, ram_gb], |row| {
+            Ok(Flavor {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                vcpus: row.get(2)?,
+                ram_gb: row.get(3)?,
+                price_hourly: row.get(4)?,
+                price_monthly: row.get(5)?,
+                price_yearly_1: row.get(6)?,
+                price_yearly_3: row.get(7)?,
+                region: row.get(8)?,
+                created_at: row.get(9)?,
+            })
+        })?.collect::<Result<Vec<_>>>()?;
+
+        Ok(flavors)
     }
 
     // Disk type operations
@@ -177,14 +145,6 @@ impl Database {
         })?.collect::<Result<Vec<_>>>()?;
 
         Ok(disks)
-    }
-
-    pub fn upsert_disk_type(&self, disk: &DiskType) -> Result<()> {
-        self.conn.execute(
-            "INSERT OR REPLACE INTO disk_types (id, name, price_per_gb, region, created_at) VALUES (?1, ?2, ?3, ?4, ?5)",
-            params![disk.id, disk.name, disk.price_per_gb, disk.region, disk.created_at],
-        )?;
-        Ok(())
     }
 
     // Quote operations
@@ -249,7 +209,6 @@ impl Database {
     }
 
     pub fn delete_quote(&self, id: &str) -> Result<()> {
-        // Delete items first
         self.conn.execute("DELETE FROM quote_items WHERE quote_id = ?1", [id])?;
         self.conn.execute("DELETE FROM quotes WHERE id = ?1", [id])?;
         Ok(())

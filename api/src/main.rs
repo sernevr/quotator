@@ -40,6 +40,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(Logger::default())
             // Pricing endpoints
             .route("/flavors", web::get().to(handlers::get_flavors))
+            .route("/flavors/match", web::get().to(handlers::best_match))
             .route("/disks", web::get().to(handlers::get_disk_types))
             .route("/pricing", web::get().to(handlers::get_all_pricing))
             .route("/crawl", web::post().to(handlers::trigger_crawl))

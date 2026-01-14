@@ -66,6 +66,11 @@ export const pricingApi = {
     return request('/pricing')
   },
 
+  // Find best matching instances by CPU and RAM
+  async findBestMatch(vcpus, ramGb) {
+    return request(`/flavors/match?vcpus=${vcpus}&ram_gb=${ramGb}`)
+  },
+
   // Trigger crawl refresh
   async refreshPricing() {
     return request('/crawl', { method: 'POST' })

@@ -1,9 +1,11 @@
 import React, { useState, useCallback } from 'react'
+import { pricingApi } from '../utils/api'
 
 export function ResourceForm({
   flavors,
   diskTypes,
-  onAddItem
+  onAddItem,
+  pricingMode
 }) {
   const [selectedFlavor, setSelectedFlavor] = useState('')
   const [selectedDisk, setSelectedDisk] = useState('')
@@ -11,6 +13,61 @@ export function ResourceForm({
   const [hostname, setHostname] = useState('')
   const [codeNumber, setCodeNumber] = useState('')
   const [description, setDescription] = useState('')
+
+  // Best match state
+  const [searchCpu, setSearchCpu] = useState('')
+  const [searchRam, setSearchRam] = useState('')
+  const [matchResults, setMatchResults] = useState([])
+  const [searching, setSearching] = useState(false)
+
+  const getFlavorPrice = (flavor) => {
+    if (!flavor) return 0
+    switch (pricingMode) {
+      case 'yearly1': return flavor.price_yearly_1 || flavor.price_hourly * 720 * 12 * 0.6
+      case 'yearly3': return flavor.price_yearly_3 || flavor.price_hourly * 720 * 12 * 3 * 0.4
+      default: return flavor.price_monthly || flavor.price_hourly * 720
+    }
+  }
+
+  const getPricePeriod = () => {
+    switch (pricingMode) {
+      case 'yearly1': return '/year'
+      case 'yearly3': return '/3 years'
+      default: return '/month'
+    }
+  }
+
+  const handleSearch = useCallback(async () => {
+    const vcpus = parseInt(searchCpu)
+    const ramGb = parseFloat(searchRam)
+
+    if (!vcpus || !ramGb || vcpus < 1 || ramGb < 0.5) {
+      return
+    }
+
+    setSearching(true)
+    try {
+      const results = await pricingApi.findBestMatch(vcpus, ramGb)
+      setMatchResults(results || [])
+    } catch (e) {
+      console.error('Search failed:', e)
+      // Fallback to client-side filtering
+      const filtered = flavors
+        .filter(f => f.vcpus >= vcpus && f.ram_gb >= ramGb)
+        .sort((a, b) => (a.price_hourly || 0) - (b.price_hourly || 0))
+        .slice(0, 5)
+      setMatchResults(filtered)
+    } finally {
+      setSearching(false)
+    }
+  }, [searchCpu, searchRam, flavors])
+
+  const handleSelectMatch = (flavor) => {
+    setSelectedFlavor(flavor.id)
+    setMatchResults([])
+    setSearchCpu('')
+    setSearchRam('')
+  }
 
   const handleAdd = useCallback(() => {
     if (!selectedFlavor) {
@@ -48,6 +105,71 @@ export function ResourceForm({
     <div className="resource-form">
       <h3>Add Resource</h3>
 
+      {/* Best Match Finder */}
+      <div className="best-match-finder">
+        <h4>Find Best ECS Match</h4>
+        <div className="best-match-inputs">
+          <div className="form-group">
+            <label>Required vCPUs</label>
+            <input
+              type="number"
+              value={searchCpu}
+              onChange={(e) => setSearchCpu(e.target.value)}
+              className="form-input"
+              placeholder="e.g., 4"
+              min="1"
+              max="128"
+            />
+          </div>
+          <div className="form-group">
+            <label>Required RAM (GB)</label>
+            <input
+              type="number"
+              value={searchRam}
+              onChange={(e) => setSearchRam(e.target.value)}
+              className="form-input"
+              placeholder="e.g., 8"
+              min="0.5"
+              max="512"
+              step="0.5"
+            />
+          </div>
+          <button
+            className="btn btn-primary"
+            onClick={handleSearch}
+            disabled={searching || !searchCpu || !searchRam}
+          >
+            {searching ? 'Searching...' : 'Find'}
+          </button>
+        </div>
+
+        {matchResults.length > 0 && (
+          <div className="best-match-results">
+            <h5>Best Matches (click to select)</h5>
+            <div className="match-list">
+              {matchResults.map(flavor => (
+                <div
+                  key={flavor.id}
+                  className="match-item"
+                  onClick={() => handleSelectMatch(flavor)}
+                >
+                  <div className="match-item-info">
+                    <div className="match-item-name">{flavor.name}</div>
+                    <div className="match-item-specs">
+                      {flavor.vcpus} vCPU, {flavor.ram_gb} GB RAM
+                    </div>
+                  </div>
+                  <div className="match-item-price">
+                    <div className="price-value">${getFlavorPrice(flavor).toFixed(2)}</div>
+                    <div className="price-period">{getPricePeriod()}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className="form-row">
         <div className="form-group">
           <label>Instance Type (ECS)</label>
@@ -59,7 +181,7 @@ export function ResourceForm({
             <option value="">Select instance type...</option>
             {flavors.map(flavor => (
               <option key={flavor.id} value={flavor.id}>
-                {flavor.name} - {flavor.vcpus} vCPU, {flavor.ram_gb}GB RAM - ${flavor.price_hourly}/hr
+                {flavor.name} - {flavor.vcpus} vCPU, {flavor.ram_gb}GB RAM - ${getFlavorPrice(flavor).toFixed(2)}{getPricePeriod()}
               </option>
             ))}
           </select>

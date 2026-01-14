@@ -274,3 +274,21 @@ pub async fn delete_item(
         }
     }
 }
+
+// Best match handler - find ECS instances by CPU/RAM requirements
+pub async fn best_match(
+    data: web::Data<AppState>,
+    query: web::Query<BestMatchQuery>,
+) -> impl Responder {
+    let db = data.db.lock().unwrap();
+
+    match db.find_best_match(query.vcpus, query.ram_gb) {
+        Ok(flavors) => HttpResponse::Ok().json(flavors),
+        Err(e) => {
+            log::error!("Failed to find best match: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": "Failed to find matching instances"
+            }))
+        }
+    }
+}

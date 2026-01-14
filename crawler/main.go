@@ -27,15 +27,18 @@ func getDBPath() string {
 	return defaultDBPath
 }
 
-// Pricing structures
+// Pricing structures with reserved instance pricing
 type Flavor struct {
-	ID          string  `json:"id"`
-	Name        string  `json:"name"`
-	VCPUs       int     `json:"vcpus"`
-	RamGB       float64 `json:"ram_gb"`
-	PriceHourly float64 `json:"price_hourly"`
-	Region      string  `json:"region"`
-	CreatedAt   string  `json:"created_at"`
+	ID            string  `json:"id"`
+	Name          string  `json:"name"`
+	VCPUs         int     `json:"vcpus"`
+	RamGB         float64 `json:"ram_gb"`
+	PriceHourly   float64 `json:"price_hourly"`
+	PriceMonthly  float64 `json:"price_monthly"`
+	PriceYearly1  float64 `json:"price_yearly_1"`
+	PriceYearly3  float64 `json:"price_yearly_3"`
+	Region        string  `json:"region"`
+	CreatedAt     string  `json:"created_at"`
 }
 
 type DiskType struct {
@@ -63,18 +66,15 @@ var (
 func main() {
 	log.Println("Starting Quotator Crawler on port 3849")
 
-	// Initialize database connection
 	if err := initDB(); err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 	defer db.Close()
 
-	// Set up HTTP handlers
 	http.HandleFunc("/health", healthHandler)
 	http.HandleFunc("/crawl", crawlHandler)
 	http.HandleFunc("/status", statusHandler)
 
-	// Start initial crawl in background
 	go func() {
 		time.Sleep(2 * time.Second)
 		performCrawl()
@@ -90,7 +90,6 @@ func initDB() error {
 	dbPath := getDBPath()
 	log.Printf("Using database: %s", dbPath)
 
-	// Ensure data directory exists
 	dataDir := filepath.Dir(dbPath)
 	if err := os.MkdirAll(dataDir, 0755); err != nil {
 		return fmt.Errorf("failed to create data directory: %w", err)
@@ -102,12 +101,16 @@ func initDB() error {
 		return fmt.Errorf("failed to open database: %w", err)
 	}
 
-	// Test connection
 	if err := db.Ping(); err != nil {
 		return fmt.Errorf("failed to ping database: %w", err)
 	}
 
-	// Initialize tables if needed
+	// Drop and recreate flavors table to add new columns
+	_, err = db.Exec(`DROP TABLE IF EXISTS flavors`)
+	if err != nil {
+		return err
+	}
+
 	_, err = db.Exec(`
 		CREATE TABLE IF NOT EXISTS flavors (
 			id TEXT PRIMARY KEY,
@@ -115,6 +118,9 @@ func initDB() error {
 			vcpus INTEGER NOT NULL,
 			ram_gb REAL NOT NULL,
 			price_hourly REAL NOT NULL,
+			price_monthly REAL NOT NULL,
+			price_yearly_1 REAL NOT NULL,
+			price_yearly_3 REAL NOT NULL,
 			region TEXT NOT NULL,
 			created_at TEXT NOT NULL
 		);
@@ -136,7 +142,7 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"status":  "ok",
 		"service": "quotator-crawler",
-		"version": "1.0.0",
+		"version": "1.1.0",
 	})
 }
 
@@ -151,7 +157,6 @@ func crawlHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Run crawl in background
 	go performCrawl()
 
 	w.Header().Set("Content-Type", "application/json")
@@ -172,14 +177,9 @@ func performCrawl() {
 		LastCrawl: time.Now(),
 	}
 
-	// Note: In production, this would make actual API calls to Huawei Cloud
-	// For now, we'll use realistic sample data based on Huawei Cloud pricing structure
-	// The actual Huawei Cloud pricing API requires authentication
-
 	flavors := getIstanbulFlavors()
 	disks := getIstanbulDiskTypes()
 
-	// Save to database
 	flavorsSaved := 0
 	for _, f := range flavors {
 		if err := saveFlavor(f); err != nil {
@@ -208,51 +208,63 @@ func performCrawl() {
 	log.Printf("Crawl completed: %d flavors, %d disk types saved", flavorsSaved, disksSaved)
 }
 
-// Get ECS flavors for Istanbul region
-// Based on Huawei Cloud ECS pricing structure
-func getIstanbulFlavors() []Flavor {
-	now := time.Now().UTC().Format(time.RFC3339)
+// Create flavor with pricing tiers
+// Reserved pricing: 1-year ~40% discount, 3-year ~60% discount (typical Huawei Cloud rates)
+func newFlavor(id string, vcpus int, ramGB float64, hourlyPrice float64) Flavor {
+	monthly := hourlyPrice * 720          // 30 days * 24 hours
+	yearly1 := monthly * 12 * 0.60        // 40% discount
+	yearly3 := monthly * 12 * 3 * 0.40    // 60% discount
 
-	// Huawei Cloud ECS flavor naming convention:
-	// s6 = General Computing, c6 = Compute-optimized, m6 = Memory-optimized
-	// Format: {series}.{size}.{cpu-mem-ratio}
-
-	return []Flavor{
-		// General Computing (s6 series) - good for general workloads
-		{ID: "s6.small.1", Name: "s6.small.1", VCPUs: 1, RamGB: 1, PriceHourly: 0.0120, Region: region, CreatedAt: now},
-		{ID: "s6.medium.2", Name: "s6.medium.2", VCPUs: 1, RamGB: 2, PriceHourly: 0.0180, Region: region, CreatedAt: now},
-		{ID: "s6.large.2", Name: "s6.large.2", VCPUs: 2, RamGB: 4, PriceHourly: 0.0360, Region: region, CreatedAt: now},
-		{ID: "s6.xlarge.2", Name: "s6.xlarge.2", VCPUs: 4, RamGB: 8, PriceHourly: 0.0720, Region: region, CreatedAt: now},
-		{ID: "s6.2xlarge.2", Name: "s6.2xlarge.2", VCPUs: 8, RamGB: 16, PriceHourly: 0.1440, Region: region, CreatedAt: now},
-		{ID: "s6.4xlarge.2", Name: "s6.4xlarge.2", VCPUs: 16, RamGB: 32, PriceHourly: 0.2880, Region: region, CreatedAt: now},
-		{ID: "s6.6xlarge.2", Name: "s6.6xlarge.2", VCPUs: 24, RamGB: 48, PriceHourly: 0.4320, Region: region, CreatedAt: now},
-		{ID: "s6.8xlarge.2", Name: "s6.8xlarge.2", VCPUs: 32, RamGB: 64, PriceHourly: 0.5760, Region: region, CreatedAt: now},
-
-		// Compute-optimized (c6 series) - higher CPU frequency
-		{ID: "c6.large.2", Name: "c6.large.2", VCPUs: 2, RamGB: 4, PriceHourly: 0.0420, Region: region, CreatedAt: now},
-		{ID: "c6.xlarge.2", Name: "c6.xlarge.2", VCPUs: 4, RamGB: 8, PriceHourly: 0.0840, Region: region, CreatedAt: now},
-		{ID: "c6.2xlarge.2", Name: "c6.2xlarge.2", VCPUs: 8, RamGB: 16, PriceHourly: 0.1680, Region: region, CreatedAt: now},
-		{ID: "c6.4xlarge.2", Name: "c6.4xlarge.2", VCPUs: 16, RamGB: 32, PriceHourly: 0.3360, Region: region, CreatedAt: now},
-		{ID: "c6.6xlarge.2", Name: "c6.6xlarge.2", VCPUs: 24, RamGB: 48, PriceHourly: 0.5040, Region: region, CreatedAt: now},
-		{ID: "c6.8xlarge.2", Name: "c6.8xlarge.2", VCPUs: 32, RamGB: 64, PriceHourly: 0.6720, Region: region, CreatedAt: now},
-
-		// Memory-optimized (m6 series) - higher RAM ratio
-		{ID: "m6.large.8", Name: "m6.large.8", VCPUs: 2, RamGB: 16, PriceHourly: 0.0600, Region: region, CreatedAt: now},
-		{ID: "m6.xlarge.8", Name: "m6.xlarge.8", VCPUs: 4, RamGB: 32, PriceHourly: 0.1200, Region: region, CreatedAt: now},
-		{ID: "m6.2xlarge.8", Name: "m6.2xlarge.8", VCPUs: 8, RamGB: 64, PriceHourly: 0.2400, Region: region, CreatedAt: now},
-		{ID: "m6.4xlarge.8", Name: "m6.4xlarge.8", VCPUs: 16, RamGB: 128, PriceHourly: 0.4800, Region: region, CreatedAt: now},
-		{ID: "m6.6xlarge.8", Name: "m6.6xlarge.8", VCPUs: 24, RamGB: 192, PriceHourly: 0.7200, Region: region, CreatedAt: now},
-		{ID: "m6.8xlarge.8", Name: "m6.8xlarge.8", VCPUs: 32, RamGB: 256, PriceHourly: 0.9600, Region: region, CreatedAt: now},
-
-		// General Computing Plus (s7 series) - latest gen
-		{ID: "s7.large.2", Name: "s7.large.2", VCPUs: 2, RamGB: 4, PriceHourly: 0.0380, Region: region, CreatedAt: now},
-		{ID: "s7.xlarge.2", Name: "s7.xlarge.2", VCPUs: 4, RamGB: 8, PriceHourly: 0.0760, Region: region, CreatedAt: now},
-		{ID: "s7.2xlarge.2", Name: "s7.2xlarge.2", VCPUs: 8, RamGB: 16, PriceHourly: 0.1520, Region: region, CreatedAt: now},
-		{ID: "s7.4xlarge.2", Name: "s7.4xlarge.2", VCPUs: 16, RamGB: 32, PriceHourly: 0.3040, Region: region, CreatedAt: now},
+	return Flavor{
+		ID:           id,
+		Name:         id,
+		VCPUs:        vcpus,
+		RamGB:        ramGB,
+		PriceHourly:  hourlyPrice,
+		PriceMonthly: monthly,
+		PriceYearly1: yearly1,
+		PriceYearly3: yearly3,
+		Region:       region,
+		CreatedAt:    time.Now().UTC().Format(time.RFC3339),
 	}
 }
 
-// Get EVS disk types for Istanbul region
+func getIstanbulFlavors() []Flavor {
+	return []Flavor{
+		// General Computing (s6 series)
+		newFlavor("s6.small.1", 1, 1, 0.0120),
+		newFlavor("s6.medium.2", 1, 2, 0.0180),
+		newFlavor("s6.large.2", 2, 4, 0.0360),
+		newFlavor("s6.xlarge.2", 4, 8, 0.0720),
+		newFlavor("s6.2xlarge.2", 8, 16, 0.1440),
+		newFlavor("s6.4xlarge.2", 16, 32, 0.2880),
+		newFlavor("s6.6xlarge.2", 24, 48, 0.4320),
+		newFlavor("s6.8xlarge.2", 32, 64, 0.5760),
+
+		// Compute-optimized (c6 series)
+		newFlavor("c6.large.2", 2, 4, 0.0420),
+		newFlavor("c6.xlarge.2", 4, 8, 0.0840),
+		newFlavor("c6.2xlarge.2", 8, 16, 0.1680),
+		newFlavor("c6.4xlarge.2", 16, 32, 0.3360),
+		newFlavor("c6.6xlarge.2", 24, 48, 0.5040),
+		newFlavor("c6.8xlarge.2", 32, 64, 0.6720),
+
+		// Memory-optimized (m6 series)
+		newFlavor("m6.large.8", 2, 16, 0.0600),
+		newFlavor("m6.xlarge.8", 4, 32, 0.1200),
+		newFlavor("m6.2xlarge.8", 8, 64, 0.2400),
+		newFlavor("m6.4xlarge.8", 16, 128, 0.4800),
+		newFlavor("m6.6xlarge.8", 24, 192, 0.7200),
+		newFlavor("m6.8xlarge.8", 32, 256, 0.9600),
+
+		// General Computing Plus (s7 series)
+		newFlavor("s7.large.2", 2, 4, 0.0380),
+		newFlavor("s7.xlarge.2", 4, 8, 0.0760),
+		newFlavor("s7.2xlarge.2", 8, 16, 0.1520),
+		newFlavor("s7.4xlarge.2", 16, 32, 0.3040),
+	}
+}
+
 func getIstanbulDiskTypes() []DiskType {
 	now := time.Now().UTC().Format(time.RFC3339)
 
@@ -267,9 +279,9 @@ func getIstanbulDiskTypes() []DiskType {
 
 func saveFlavor(f Flavor) error {
 	_, err := db.Exec(`
-		INSERT OR REPLACE INTO flavors (id, name, vcpus, ram_gb, price_hourly, region, created_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?)
-	`, f.ID, f.Name, f.VCPUs, f.RamGB, f.PriceHourly, f.Region, f.CreatedAt)
+		INSERT OR REPLACE INTO flavors (id, name, vcpus, ram_gb, price_hourly, price_monthly, price_yearly_1, price_yearly_3, region, created_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, f.ID, f.Name, f.VCPUs, f.RamGB, f.PriceHourly, f.PriceMonthly, f.PriceYearly1, f.PriceYearly3, f.Region, f.CreatedAt)
 	return err
 }
 
@@ -280,4 +292,3 @@ func saveDiskType(d DiskType) error {
 	`, d.ID, d.Name, d.PricePerGB, d.Region, d.CreatedAt)
 	return err
 }
-

@@ -5,28 +5,59 @@
   padding: 0;
 }
 
+/* Huawei Cloud Theme */
 :root {
-  --primary: #e60012;
-  --primary-dark: #c40010;
-  --secondary: #333;
-  --bg-dark: #1a1a2e;
-  --bg-light: #f5f5f5;
-  --card-bg: #ffffff;
-  --border: #ddd;
-  --text: #333;
-  --text-light: #666;
-  --success: #28a745;
-  --warning: #ffc107;
-  --error: #dc3545;
+  /* Huawei Cloud Primary Colors */
+  --huawei-red: #c7000b;
+  --huawei-red-dark: #a50009;
+  --huawei-red-light: #ff1a1a;
+
+  /* Secondary Colors */
+  --huawei-dark: #191919;
+  --huawei-gray-900: #252525;
+  --huawei-gray-800: #333333;
+  --huawei-gray-600: #666666;
+  --huawei-gray-400: #999999;
+  --huawei-gray-200: #e5e5e5;
+  --huawei-gray-100: #f5f5f5;
+  --huawei-white: #ffffff;
+
+  /* Accent Colors */
+  --huawei-blue: #0052cc;
+  --huawei-green: #00875a;
+  --huawei-orange: #ff8800;
+
+  /* Semantic */
+  --primary: var(--huawei-red);
+  --primary-dark: var(--huawei-red-dark);
+  --primary-light: var(--huawei-red-light);
+  --secondary: var(--huawei-gray-800);
+  --bg-dark: var(--huawei-dark);
+  --bg-light: var(--huawei-gray-100);
+  --card-bg: var(--huawei-white);
+  --border: var(--huawei-gray-200);
+  --text: var(--huawei-gray-800);
+  --text-light: var(--huawei-gray-600);
+  --success: var(--huawei-green);
+  --warning: var(--huawei-orange);
+  --error: var(--huawei-red);
+
+  /* Layout */
   --radius: 8px;
-  --shadow: 0 2px 8px rgba(0,0,0,0.1);
+  --radius-sm: 4px;
+  --radius-lg: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  --shadow-lg: 0 4px 16px rgba(0,0,0,0.12);
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  font-family: 'HuaweiSans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   background: var(--bg-light);
   color: var(--text);
-  line-height: 1.5;
+  line-height: 1.6;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* App Layout */
@@ -36,26 +67,40 @@ body {
   flex-direction: column;
 }
 
-/* Header */
+/* Header - Huawei Cloud Style */
 .header {
-  background: var(--bg-dark);
+  background: linear-gradient(135deg, var(--bg-dark) 0%, var(--huawei-gray-900) 100%);
   color: white;
   padding: 1rem 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-bottom: 3px solid var(--primary);
 }
 
 .header h1 {
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--primary);
+  color: var(--huawei-white);
+  letter-spacing: -0.5px;
+}
+
+.header h1::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: var(--primary);
+  border-radius: 50%;
+  margin-right: 10px;
+  vertical-align: middle;
 }
 
 .header-subtitle {
   font-size: 0.875rem;
-  color: #aaa;
+  color: var(--huawei-gray-400);
   margin-left: 1rem;
+  font-weight: 400;
 }
 
 .header-brand {
@@ -69,7 +114,7 @@ body {
   display: flex;
   gap: 1.5rem;
   padding: 1.5rem;
-  max-width: 1600px;
+  max-width: 1800px;
   margin: 0 auto;
   width: 100%;
 }
@@ -85,6 +130,7 @@ body {
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   overflow: hidden;
+  border: 1px solid var(--border);
 }
 
 .quote-selector-header {
@@ -93,10 +139,15 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background: var(--bg-light);
 }
 
 .quote-selector-header h3 {
-  font-size: 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-light);
 }
 
 .quote-list {
@@ -111,7 +162,7 @@ body {
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid var(--border);
-  transition: background 0.2s;
+  transition: all 0.2s ease;
 }
 
 .quote-item:hover {
@@ -121,6 +172,7 @@ body {
 .quote-item.active {
   background: var(--primary);
   color: white;
+  border-left: 4px solid var(--primary-dark);
 }
 
 .quote-item-name {
@@ -128,6 +180,7 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-weight: 500;
 }
 
 .quote-empty {
@@ -145,15 +198,17 @@ body {
 /* Empty State */
 .empty-state {
   background: var(--card-bg);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
   padding: 4rem 2rem;
   text-align: center;
+  border: 1px solid var(--border);
 }
 
 .empty-state h2 {
   margin-bottom: 1rem;
-  color: var(--primary);
+  color: var(--text);
+  font-weight: 600;
 }
 
 .empty-state p {
@@ -168,11 +223,108 @@ body {
   box-shadow: var(--shadow);
   padding: 1.5rem;
   margin-bottom: 1.5rem;
+  border: 1px solid var(--border);
 }
 
 .resource-form h3 {
   margin-bottom: 1rem;
-  color: var(--secondary);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+/* Best Match Finder */
+.best-match-finder {
+  background: linear-gradient(135deg, var(--huawei-gray-100) 0%, var(--huawei-white) 100%);
+  border: 2px dashed var(--primary);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.best-match-finder h4 {
+  color: var(--primary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.best-match-inputs {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+}
+
+.best-match-inputs .form-group {
+  flex: 1;
+}
+
+.best-match-results {
+  margin-top: 1rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+}
+
+.best-match-results h5 {
+  font-size: 0.75rem;
+  color: var(--text-light);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.match-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.match-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: var(--huawei-white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.match-item:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow);
+}
+
+.match-item-info {
+  flex: 1;
+}
+
+.match-item-name {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.match-item-specs {
+  font-size: 0.75rem;
+  color: var(--text-light);
+}
+
+.match-item-price {
+  text-align: right;
+}
+
+.match-item-price .price-value {
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.match-item-price .price-period {
+  font-size: 0.75rem;
+  color: var(--text-light);
 }
 
 .form-row {
@@ -196,21 +348,25 @@ body {
 .form-group label {
   display: block;
   margin-bottom: 0.5rem;
-  font-weight: 500;
-  font-size: 0.875rem;
+  font-weight: 600;
+  font-size: 0.75rem;
+  color: var(--text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .form-input,
 .form-select {
   width: 100%;
-  padding: 0.5rem 0.75rem;
+  padding: 0.625rem 0.875rem;
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-size: 0.875rem;
+  transition: all 0.2s ease;
+  background: var(--huawei-white);
 }
 
 .form-select {
-  background: white;
   cursor: pointer;
 }
 
@@ -218,6 +374,53 @@ body {
 .form-select:focus {
   outline: none;
   border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(199, 0, 11, 0.1);
+}
+
+/* Pricing Mode Selector */
+.pricing-mode-selector {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: var(--bg-light);
+  border-radius: var(--radius);
+}
+
+.pricing-mode-btn {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--huawei-white);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.pricing-mode-btn:hover {
+  border-color: var(--primary);
+  background: var(--bg-light);
+}
+
+.pricing-mode-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+.pricing-mode-btn .discount {
+  display: block;
+  font-size: 0.625rem;
+  font-weight: 400;
+  opacity: 0.8;
+  margin-top: 0.25rem;
+}
+
+.pricing-mode-btn.active .discount {
+  color: rgba(255, 255, 255, 0.9);
 }
 
 /* Quote Table */
@@ -226,11 +429,13 @@ body {
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   overflow: hidden;
+  border: 1px solid var(--border);
 }
 
 .quote-header {
   padding: 1rem;
   border-bottom: 1px solid var(--border);
+  background: var(--bg-light);
 }
 
 .quote-name-input {
@@ -240,12 +445,13 @@ body {
   background: transparent;
   width: 100%;
   padding: 0.5rem;
+  color: var(--text);
 }
 
 .quote-name-input:focus {
   outline: none;
-  background: var(--bg-light);
-  border-radius: 4px;
+  background: var(--huawei-white);
+  border-radius: var(--radius-sm);
 }
 
 .quote-table-empty {
@@ -255,40 +461,46 @@ body {
   padding: 3rem;
   text-align: center;
   color: var(--text-light);
+  border: 1px solid var(--border);
 }
 
 .quote-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
 }
 
 .quote-table th {
-  background: var(--bg-light);
+  background: var(--huawei-gray-100);
   padding: 0.75rem 0.5rem;
   text-align: left;
   font-weight: 600;
   border-bottom: 2px solid var(--border);
   white-space: nowrap;
+  text-transform: uppercase;
+  font-size: 0.6875rem;
+  letter-spacing: 0.5px;
+  color: var(--text-light);
 }
 
 .quote-table td {
-  padding: 0.5rem;
+  padding: 0.625rem 0.5rem;
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
 }
 
 .quote-table tbody tr:hover {
-  background: rgba(230, 0, 18, 0.05);
+  background: rgba(199, 0, 11, 0.03);
 }
 
 .table-input {
   width: 100%;
-  padding: 0.25rem 0.5rem;
+  padding: 0.375rem 0.5rem;
   border: 1px solid transparent;
-  border-radius: 4px;
-  font-size: 0.875rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.8125rem;
   background: transparent;
+  transition: all 0.2s ease;
 }
 
 .table-input:hover {
@@ -298,7 +510,7 @@ body {
 .table-input:focus {
   outline: none;
   border-color: var(--primary);
-  background: white;
+  background: var(--huawei-white);
 }
 
 .table-input-sm {
@@ -314,18 +526,19 @@ body {
 }
 
 .summary-row {
-  background: var(--bg-light);
+  background: var(--huawei-gray-100);
 }
 
 .summary-row td {
   border-top: 2px solid var(--border);
+  font-weight: 600;
 }
 
 /* Quote Summary Cards */
 .quote-summary {
   display: flex;
   gap: 1rem;
-  padding: 1rem;
+  padding: 1.25rem;
   background: var(--bg-light);
   border-top: 1px solid var(--border);
   flex-wrap: wrap;
@@ -334,30 +547,44 @@ body {
 .summary-card {
   flex: 1;
   min-width: 120px;
-  background: white;
+  background: var(--huawei-white);
   padding: 1rem;
   border-radius: var(--radius);
   text-align: center;
   border: 1px solid var(--border);
+  transition: all 0.2s ease;
+}
+
+.summary-card:hover {
+  box-shadow: var(--shadow);
 }
 
 .summary-card.highlight {
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
   color: white;
   border-color: var(--primary);
 }
 
 .summary-label {
   display: block;
-  font-size: 0.75rem;
+  font-size: 0.625rem;
   text-transform: uppercase;
+  letter-spacing: 1px;
   margin-bottom: 0.5rem;
-  opacity: 0.8;
+  opacity: 0.7;
+  font-weight: 600;
 }
 
 .summary-value {
-  font-size: 1.25rem;
+  font-size: 1.375rem;
   font-weight: 700;
+}
+
+.pricing-label {
+  display: block;
+  font-size: 0.625rem;
+  margin-top: 0.25rem;
+  opacity: 0.6;
 }
 
 /* Buttons */
@@ -365,53 +592,58 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.5rem 1rem;
+  padding: 0.625rem 1.25rem;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .btn-primary {
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
   color: white;
+  box-shadow: 0 2px 4px rgba(199, 0, 11, 0.3);
 }
 
 .btn-primary:hover {
-  background: var(--primary-dark);
+  background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+  box-shadow: 0 4px 8px rgba(199, 0, 11, 0.4);
+  transform: translateY(-1px);
 }
 
 .btn-secondary {
-  background: var(--secondary);
+  background: var(--huawei-gray-800);
   color: white;
 }
 
 .btn-secondary:hover {
-  background: #444;
+  background: var(--huawei-gray-600);
 }
 
 .btn-sm {
-  padding: 0.25rem 0.75rem;
+  padding: 0.375rem 0.75rem;
   font-size: 0.75rem;
 }
 
 .btn-lg {
-  padding: 0.75rem 2rem;
+  padding: 0.875rem 2rem;
   font-size: 1rem;
 }
 
 .btn-icon {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   border: none;
   background: transparent;
   cursor: pointer;
   font-size: 1.25rem;
   line-height: 1;
-  border-radius: 4px;
-  transition: all 0.2s;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
 }
 
 .btn-delete {
@@ -420,7 +652,7 @@ body {
 
 .btn-delete:hover {
   color: var(--error);
-  background: rgba(220, 53, 69, 0.1);
+  background: rgba(199, 0, 11, 0.1);
 }
 
 /* Alerts */
@@ -431,7 +663,7 @@ body {
 }
 
 .alert-error {
-  background: rgba(220, 53, 69, 0.1);
+  background: rgba(199, 0, 11, 0.1);
   border: 1px solid var(--error);
   color: var(--error);
 }
@@ -443,13 +675,31 @@ body {
   color: var(--text-light);
 }
 
+.loading::after {
+  content: '';
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 /* Footer */
 .footer {
   background: var(--bg-dark);
-  color: #aaa;
+  color: var(--huawei-gray-400);
   text-align: center;
   padding: 1rem;
   font-size: 0.75rem;
+  border-top: 3px solid var(--primary);
 }
 
 /* Responsive */
@@ -464,6 +714,14 @@ body {
 
   .quote-list {
     max-height: 200px;
+  }
+
+  .pricing-mode-selector {
+    flex-wrap: wrap;
+  }
+
+  .pricing-mode-btn {
+    flex: 1 1 45%;
   }
 }
 
@@ -482,10 +740,18 @@ body {
   }
 
   .quote-table {
-    font-size: 0.75rem;
+    font-size: 0.6875rem;
   }
 
   .quote-summary {
     flex-direction: column;
+  }
+
+  .best-match-inputs {
+    flex-direction: column;
+  }
+
+  .pricing-mode-btn {
+    flex: 1 1 100%;
   }
 }

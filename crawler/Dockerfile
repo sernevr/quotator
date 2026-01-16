@@ -5,10 +5,9 @@ RUN apk add --no-cache gcc musl-dev
 WORKDIR /app
 
 COPY go.mod go.sum* ./
-RUN go mod download || true
 
 COPY . .
-RUN CGO_ENABLED=1 go build -o crawler .
+RUN go mod tidy && CGO_ENABLED=1 go build -o crawler .
 
 FROM alpine:3.19
 

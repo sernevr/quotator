@@ -1,10 +1,6 @@
-version: '3.8'
-
 services:
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    build: ./frontend
     container_name: quotator-frontend
     ports:
       - "3847:3847"
@@ -15,9 +11,7 @@ services:
     restart: unless-stopped
 
   api:
-    build:
-      context: ./api
-      dockerfile: Dockerfile
+    build: ./api
     container_name: quotator-api
     ports:
       - "3848:3848"
@@ -32,9 +26,7 @@ services:
     restart: unless-stopped
 
   crawler:
-    build:
-      context: ./crawler
-      dockerfile: Dockerfile
+    build: ./crawler
     container_name: quotator-crawler
     ports:
       - "3849:3849"

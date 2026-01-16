@@ -1,3 +1,7 @@
+# Claude
+CLAUDE.md
+.claude/
+
 # Dependencies
 node_modules/
 vendor/
@@ -55,6 +59,7 @@ data/test-report.txt
 .DS_Store
 Thumbs.db
 ._*
+__MACOSX/
 
 # Logs
 *.log

@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react'
+import { RotateCcw } from 'lucide-react'
 import { pricingApi } from '../utils/api'
 
 export function ResourceForm({
@@ -275,7 +276,7 @@ export function ResourceForm({
               onClick={() => setAutoDescription(!autoDescription)}
               title={autoDescription ? 'Auto-generate ON' : 'Auto-generate OFF'}
             >
-              ⟳
+              <RotateCcw size={14} />
             </button>
           </label>
           <input

@@ -1,4 +1,5 @@
 import React from 'react'
+import { Upload, Download, BarChart3, MessageSquare, Sun, Moon, HelpCircle, RefreshCw } from 'lucide-react'
 import { useVerbosity } from '../App'
 
 export function Header({
@@ -24,7 +25,7 @@ export function Header({
           onClick={onImport}
           title="Import CSV (Ctrl+I)"
         >
-          ⇧
+          <Upload size={18} />
         </button>
         <button
           className="header-btn icon-btn"
@@ -32,7 +33,7 @@ export function Header({
           disabled={!canExport}
           title="Export CSV (Ctrl+E)"
         >
-          ⇩
+          <Download size={18} />
         </button>
         <div className="header-separator" />
         <button
@@ -40,21 +41,21 @@ export function Header({
           onClick={onToggleAnalytics}
           title="Cost Analytics (A)"
         >
-          📊
+          <BarChart3 size={18} />
         </button>
         <button
           className={`header-btn icon-btn ${verbose ? 'active' : ''}`}
           onClick={toggleVerbose}
           title={verbose ? 'Verbose notifications ON' : 'Verbose notifications OFF'}
         >
-          💬
+          <MessageSquare size={18} />
         </button>
         <button
           className="header-btn icon-btn"
           onClick={onToggleDarkMode}
           title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
         >
-          {isDark ? '☀' : '☾'}
+          {isDark ? <Sun size={18} /> : <Moon size={18} />}
         </button>
         <div className="header-separator" />
         <button
@@ -62,14 +63,15 @@ export function Header({
           onClick={onShowHelp}
           title="Keyboard shortcuts (?)"
         >
-          ?
+          <HelpCircle size={18} />
         </button>
         <button
           className="header-btn"
           onClick={onRefreshPricing}
           title="Refresh pricing data from Huawei Cloud"
         >
-          ↻ Refresh
+          <RefreshCw size={16} />
+          <span>Refresh</span>
         </button>
       </div>
     </header>

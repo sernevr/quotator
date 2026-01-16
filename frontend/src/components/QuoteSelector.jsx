@@ -1,4 +1,5 @@
 import React from 'react'
+import { Trash2, Copy, Plus } from 'lucide-react'
 import { QuoteFilter } from './SearchFilter'
 import { SkeletonQuoteList } from './Skeleton'
 
@@ -20,7 +21,8 @@ export function QuoteSelector({
       <div className="quote-selector-header">
         <h3>Quotes</h3>
         <button className="btn btn-primary btn-sm" onClick={onCreate}>
-          + New
+          <Plus size={14} />
+          <span>New</span>
         </button>
       </div>
 
@@ -56,7 +58,7 @@ export function QuoteSelector({
                 }}
                 title="Delete quote"
               >
-                ×
+                <Trash2 size={14} />
               </button>
             </div>
           ))
@@ -70,7 +72,8 @@ export function QuoteSelector({
             onClick={onDuplicate}
             title="Duplicate this quote"
           >
-            ⎘ Duplicate
+            <Copy size={14} />
+            <span>Duplicate</span>
           </button>
         </div>
       )}

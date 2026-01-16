@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react'
+import { CheckCircle, XCircle, AlertTriangle, Info } from 'lucide-react'
 
 const ToastContext = createContext(null)
 
@@ -57,10 +58,10 @@ function ToastContainer({ toasts, onRemove }) {
           onClick={() => onRemove(toast.id)}
         >
           <span className="toast-icon">
-            {toast.type === 'success' && '✓'}
-            {toast.type === 'error' && '✕'}
-            {toast.type === 'warning' && '⚠'}
-            {toast.type === 'info' && 'ℹ'}
+            {toast.type === 'success' && <CheckCircle size={18} />}
+            {toast.type === 'error' && <XCircle size={18} />}
+            {toast.type === 'warning' && <AlertTriangle size={18} />}
+            {toast.type === 'info' && <Info size={18} />}
           </span>
           <span className="toast-message">{toast.message}</span>
         </div>

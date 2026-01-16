@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.2.1] - 2026-01-16
+
+### UI Improvements
+
+- **Modern Icon Library**: Replaced all Unicode symbols and emoji icons with Lucide React icons for a consistent, professional appearance
+- **Icon Consistency**: All icons now use the same stroke-based design language with appropriate sizing (14-20px)
+
+### Technical Changes
+
+- Added `lucide-react` dependency for modern SVG icons
+- Updated components with Lucide icons:
+  - `Header.jsx`: Upload, Download, BarChart3, MessageSquare, Sun, Moon, HelpCircle, RefreshCw
+  - `QuoteTable.jsx`: Check, X, Pencil, Trash2
+  - `ResourceForm.jsx`: RotateCcw
+  - `Toast.jsx`: CheckCircle, XCircle, AlertTriangle, Info
+  - `SearchFilter.jsx`: Search, X
+  - `QuoteSelector.jsx`: Trash2, Copy, Plus
+  - `App.jsx`: X (modal close)
+- Updated CSS for proper SVG icon alignment in buttons and interactive elements
+
+### Dependencies
+
+- Added: `lucide-react` (modern React icon library)
+
+---
+
 ## [1.2.0] - 2026-01-16
 
 ### New Features
@@ -27,13 +53,13 @@
 
 - **Count Input**: Add multiple identical resources at once with count field (1-100). Codes auto-increment with suffix (-01, -02, etc.)
 - **Auto-Increment Code**: When code ends with number (e.g., WS-001), next batch auto-increments (WS-002)
-- **Auto-Generate Description**: Description auto-populates from selected specs. Toggle auto-generation with ⟳ button
+- **Auto-Generate Description**: Description auto-populates from selected specs. Toggle auto-generation with icon button
 - **Description Beside Code**: Code and description fields now on same row for compact layout
 
 #### Table Improvements
 
 - **Collapsible Specs Columns**: Toggle vCPUs/RAM/Disk columns visibility with "Show Specs"/"Hide Specs" button
-- **Inline Edit**: Edit resource instance type and disk directly in table row. Click ✎ to enter edit mode, ✓ to save, ✕ to cancel
+- **Inline Edit**: Edit resource instance type and disk directly in table row. Click edit icon to enter edit mode, check to save, X to cancel
 - **Quote UUID Display**: Shows quote ID in greyed-out style below quote name for reference
 
 #### Import Improvements

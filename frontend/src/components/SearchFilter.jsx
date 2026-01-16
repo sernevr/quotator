@@ -1,9 +1,12 @@
 import React from 'react'
+import { Search, X } from 'lucide-react'
 
 export function SearchFilter({ value, onChange, placeholder = 'Search...' }) {
   return (
     <div className="search-filter">
-      <span className="search-icon">⌕</span>
+      <span className="search-icon">
+        <Search size={16} />
+      </span>
       <input
         type="text"
         value={value}
@@ -17,7 +20,7 @@ export function SearchFilter({ value, onChange, placeholder = 'Search...' }) {
           onClick={() => onChange('')}
           title="Clear search"
         >
-          ×
+          <X size={14} />
         </button>
       )}
     </div>

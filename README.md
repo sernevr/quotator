@@ -27,6 +27,10 @@ A full-stack application for generating pricing quotes based on Huawei Cloud ECS
 - **ECS Instance Selection**: General Computing (s6/s7), Compute-optimized (c6), Memory-optimized (m6)
 - **EVS Disk Selection**: SATA, SAS, SSD, General Purpose SSD, Extreme SSD
 - **Quote Generation**: Tables with hostnames, code numbers, descriptions, cost summaries
+- **Dark Mode**: System-aware dark mode with manual toggle
+- **Keyboard Shortcuts**: Full keyboard navigation (press `?` to view all shortcuts)
+- **CSV Import/Export**: Import existing data or export quotes for sharing
+- **Modern UI**: Clean interface with Lucide React icons
 - **Service Management**: Start/stop with optional system service installation
 
 ## Quick Start
@@ -93,11 +97,11 @@ Prerequisites: Go 1.21+, Rust 1.75+, Node.js 20+
 
 ## Services
 
-| Service  | Port | Technology   | Purpose                  |
-|----------|------|--------------|--------------------------|
-| Frontend | 3847 | React/Vite   | Web UI                   |
-| API      | 3848 | Rust/Actix   | REST API + SQLite        |
-| Crawler  | 3849 | Go           | Pricing data fetcher     |
+| Service  | Port | Technology              | Purpose                  |
+|----------|------|-------------------------|--------------------------|
+| Frontend | 3847 | React/Vite/Lucide       | Web UI                   |
+| API      | 3848 | Rust/Actix              | REST API + SQLite        |
+| Crawler  | 3849 | Go                      | Pricing data fetcher     |
 
 ## API Endpoints
 

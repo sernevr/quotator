@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react'
+import { Check, X, Pencil, Trash2 } from 'lucide-react'
 import { EmptyState } from './EmptyState'
 
 export function QuoteTable({
@@ -300,14 +301,14 @@ export function QuoteTable({
                         onClick={() => saveEdit(item.id)}
                         title="Save changes"
                       >
-                        ✓
+                        <Check size={16} />
                       </button>
                       <button
                         className="btn-icon btn-cancel"
                         onClick={cancelEdit}
                         title="Cancel editing"
                       >
-                        ✕
+                        <X size={16} />
                       </button>
                     </>
                   ) : (
@@ -317,14 +318,14 @@ export function QuoteTable({
                         onClick={() => startEdit(item)}
                         title="Edit resource specs"
                       >
-                        ✎
+                        <Pencil size={14} />
                       </button>
                       <button
                         className="btn-icon btn-delete"
                         onClick={() => onDeleteItem(item.id)}
                         title="Remove resource"
                       >
-                        ×
+                        <Trash2 size={14} />
                       </button>
                     </>
                   )}

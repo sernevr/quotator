@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, createContext, useContext } from 'react'
+import { X } from 'lucide-react'
 import { Header } from './components/Header'
 import { QuoteSelector } from './components/QuoteSelector'
 import { ResourceForm } from './components/ResourceForm'
@@ -448,7 +449,9 @@ function AppContent() {
           <div className="help-modal" onClick={e => e.stopPropagation()}>
             <div className="help-modal-header">
               <h3>Keyboard Shortcuts</h3>
-              <button className="help-modal-close" onClick={() => setShowHelp(false)}>×</button>
+              <button className="help-modal-close" onClick={() => setShowHelp(false)}>
+                <X size={20} />
+              </button>
             </div>
             <div className="help-modal-content">
               <KeyboardShortcutsHelp shortcuts={shortcuts} />
@@ -462,7 +465,9 @@ function AppContent() {
           <div className="help-modal cost-modal" onClick={e => e.stopPropagation()}>
             <div className="help-modal-header">
               <h3>Cost Analytics</h3>
-              <button className="help-modal-close" onClick={() => setShowCostChart(false)}>×</button>
+              <button className="help-modal-close" onClick={() => setShowCostChart(false)}>
+                <X size={20} />
+              </button>
             </div>
             <div className="help-modal-content">
               <CostChart items={items} pricingMode={pricingMode} />

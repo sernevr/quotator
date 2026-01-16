@@ -1,6 +1,6 @@
 use actix_web::{web, HttpResponse, Responder};
 
-use crate::models::*;
+use crate::models::{*, ApiError, PaginatedResponse, PaginationQuery};
 use crate::AppState;
 
 // Health check
@@ -98,15 +98,50 @@ pub async fn trigger_crawl() -> impl Responder {
 }
 
 // Quote handlers
-pub async fn get_quotes(data: web::Data<AppState>) -> impl Responder {
+pub async fn get_quotes(
+    data: web::Data<AppState>,
+    query: web::Query<PaginationQuery>,
+) -> impl Responder {
+    let db = data.db.lock().unwrap();
+
+    let page = query.page.unwrap_or(1).max(1);
+    let limit = query.limit.unwrap_or(100).min(100);
+    let sort_by = query.sort_by.as_deref().unwrap_or("updated_at");
+    let sort_order = query.sort_order.as_deref().unwrap_or("desc");
+    let search = query.search.as_deref();
+
+    match db.get_quotes_paginated(page, limit, sort_by, sort_order, search) {
+        Ok((quotes, total)) => {
+            let total_pages = ((total as f64) / (limit as f64)).ceil() as u32;
+            HttpResponse::Ok().json(PaginatedResponse {
+                data: quotes,
+                total,
+                page,
+                limit,
+                total_pages,
+            })
+        }
+        Err(e) => {
+            log::error!("Failed to get quotes: {}", e);
+            HttpResponse::InternalServerError().json(ApiError::new(
+                "Failed to fetch quotes",
+                "QUOTES_FETCH_ERROR"
+            ))
+        }
+    }
+}
+
+// Legacy endpoint for backward compatibility (returns all quotes)
+pub async fn get_quotes_all(data: web::Data<AppState>) -> impl Responder {
     let db = data.db.lock().unwrap();
     match db.get_quotes() {
         Ok(quotes) => HttpResponse::Ok().json(quotes),
         Err(e) => {
             log::error!("Failed to get quotes: {}", e);
-            HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": "Failed to fetch quotes"
-            }))
+            HttpResponse::InternalServerError().json(ApiError::new(
+                "Failed to fetch quotes",
+                "QUOTES_FETCH_ERROR"
+            ))
         }
     }
 }

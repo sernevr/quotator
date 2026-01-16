@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
+import { EmptyState } from './EmptyState'
 
 export function QuoteTable({
   items,
@@ -6,8 +7,16 @@ export function QuoteTable({
   onUpdateQuoteName,
   onUpdateItem,
   onDeleteItem,
-  pricingMode
+  pricingMode,
+  selectedItems = new Set(),
+  onSelectItem,
+  onSelectAll,
+  onBulkDelete,
+  onExportCSV,
+  onDuplicate
 }) {
+  const [showExportMenu, setShowExportMenu] = useState(false)
+
   const getPricingLabel = () => {
     switch (pricingMode) {
       case 'yearly1': return '1-Year Reserved'
@@ -18,9 +27,9 @@ export function QuoteTable({
 
   const getMultiplier = () => {
     switch (pricingMode) {
-      case 'yearly1': return { hours: 720 * 12, discount: 0.6 }  // 40% discount
-      case 'yearly3': return { hours: 720 * 12 * 3, discount: 0.4 }  // 60% discount
-      default: return { hours: 720, discount: 1.0 }  // No discount
+      case 'yearly1': return { hours: 720 * 12, discount: 0.6 }
+      case 'yearly3': return { hours: 720 * 12 * 3, discount: 0.4 }
+      default: return { hours: 720, discount: 1.0 }
     }
   }
 
@@ -33,7 +42,6 @@ export function QuoteTable({
     const totalFlavorCost = items.reduce((sum, item) => sum + (item.flavor_price || 0), 0)
     const totalDiskCost = items.reduce((sum, item) => sum + (item.disk_price || 0), 0)
 
-    // Calculate period cost based on mode
     const periodFlavorCost = totalFlavorCost * hours * discount
     const periodDiskCost = pricingMode === 'monthly' ? totalDiskCost : totalDiskCost * (hours / 720)
 
@@ -58,10 +66,22 @@ export function QuoteTable({
     return flavorCost + diskCost
   }
 
+  const allSelected = items.length > 0 && selectedItems.size === items.length
+  const someSelected = selectedItems.size > 0 && selectedItems.size < items.length
+
   if (items.length === 0) {
     return (
-      <div className="quote-table-empty">
-        <p>No resources added yet. Use the form above to add resources.</p>
+      <div className="quote-table-container">
+        <div className="quote-header">
+          <input
+            type="text"
+            value={quoteName}
+            onChange={(e) => onUpdateQuoteName(e.target.value)}
+            className="quote-name-input"
+            placeholder="Quote name..."
+          />
+        </div>
+        <EmptyState type="items" />
       </div>
     )
   }
@@ -76,11 +96,57 @@ export function QuoteTable({
           className="quote-name-input"
           placeholder="Quote name..."
         />
+        <div className="quote-header-actions">
+          <div className="export-dropdown">
+            <button
+              className="btn btn-sm btn-secondary"
+              onClick={() => setShowExportMenu(!showExportMenu)}
+            >
+              ↓ Export
+            </button>
+            {showExportMenu && (
+              <div className="export-menu">
+                <button
+                  className="export-menu-item"
+                  onClick={() => {
+                    onExportCSV()
+                    setShowExportMenu(false)
+                  }}
+                >
+                  Export as CSV
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
+
+      {selectedItems.size > 0 && (
+        <div className="bulk-actions">
+          <span className="bulk-count">{selectedItems.size} selected</span>
+          <button className="bulk-btn bulk-btn-danger" onClick={onBulkDelete}>
+            Delete Selected
+          </button>
+          <button className="bulk-btn" onClick={() => onSelectAll(false)}>
+            Clear Selection
+          </button>
+        </div>
+      )}
 
       <table className="quote-table">
         <thead>
           <tr>
+            <th style={{ width: '40px' }}>
+              <input
+                type="checkbox"
+                className="bulk-checkbox"
+                checked={allSelected}
+                ref={el => {
+                  if (el) el.indeterminate = someSelected
+                }}
+                onChange={(e) => onSelectAll(e.target.checked)}
+              />
+            </th>
             <th>#</th>
             <th>Hostname</th>
             <th>Code</th>
@@ -99,9 +165,18 @@ export function QuoteTable({
           {items.map((item, index) => {
             const hourlyTotal = item.flavor_price || 0
             const periodTotal = calculateItemPeriodCost(item)
+            const isSelected = selectedItems.has(item.id)
 
             return (
-              <tr key={item.id}>
+              <tr key={item.id} className={isSelected ? 'selected-row' : ''}>
+                <td>
+                  <input
+                    type="checkbox"
+                    className="bulk-checkbox"
+                    checked={isSelected}
+                    onChange={(e) => onSelectItem(item.id, e.target.checked)}
+                  />
+                </td>
                 <td>{index + 1}</td>
                 <td>
                   <input
@@ -140,7 +215,7 @@ export function QuoteTable({
                     onClick={() => onDeleteItem(item.id)}
                     title="Remove resource"
                   >
-                    x
+                    ×
                   </button>
                 </td>
               </tr>
@@ -149,6 +224,7 @@ export function QuoteTable({
         </tbody>
         <tfoot>
           <tr className="summary-row">
+            <td></td>
             <td colSpan="4"><strong>Total ({summary.itemCount} items)</strong></td>
             <td className="text-center"><strong>{summary.totalVCPUs}</strong></td>
             <td className="text-center"><strong>{summary.totalRAM}</strong></td>

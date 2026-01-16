@@ -140,6 +140,23 @@ export function useQuote() {
     }
   }, [currentQuote, items])
 
+  // Bulk delete items
+  const bulkDeleteItems = useCallback(async (itemIds) => {
+    if (!currentQuote) return
+
+    try {
+      // Delete items in parallel
+      await Promise.all(
+        itemIds.map(id => quoteItemApi.deleteItem(currentQuote.id, id))
+      )
+      const newItems = items.filter(i => !itemIds.includes(i.id))
+      setItems(newItems)
+      cache.set('items', currentQuote.id, newItems)
+    } catch (e) {
+      console.error('Failed to bulk delete items:', e)
+    }
+  }, [currentQuote, items])
+
   // Delete quote
   const deleteQuote = useCallback(async (quoteId) => {
     try {
@@ -154,6 +171,53 @@ export function useQuote() {
       console.error('Failed to delete quote:', e)
     }
   }, [currentQuote])
+
+  // Duplicate quote
+  const duplicateQuote = useCallback(async (quoteId) => {
+    try {
+      // Get original quote
+      const originalQuote = quotes.find(q => q.id === quoteId)
+      if (!originalQuote) return null
+
+      // Create new quote with copy name
+      const newQuote = await quoteApi.createQuote({
+        name: `${originalQuote.name} (Copy)`
+      })
+
+      // Get original items
+      const originalItems = await quoteItemApi.getItems(quoteId)
+
+      // Copy all items to new quote
+      const newItems = await Promise.all(
+        originalItems.map(item => quoteItemApi.addItem(newQuote.id, {
+          flavor_id: item.flavor_id,
+          flavor_name: item.flavor_name,
+          vcpus: item.vcpus,
+          ram_gb: item.ram_gb,
+          flavor_price: item.flavor_price,
+          disk_type_id: item.disk_type_id,
+          disk_type_name: item.disk_type_name,
+          disk_size_gb: item.disk_size_gb,
+          disk_price: item.disk_price,
+          hostname: item.hostname,
+          code_number: item.code_number,
+          description: item.description
+        }))
+      )
+
+      // Update state
+      setQuotes(prev => [...prev, newQuote])
+      setCurrentQuote(newQuote)
+      setItems(newItems)
+      cache.set('quotes', 'list', [...quotes, newQuote])
+      cache.set('items', newQuote.id, newItems)
+
+      return newQuote
+    } catch (e) {
+      console.error('Failed to duplicate quote:', e)
+      return null
+    }
+  }, [quotes])
 
   useEffect(() => {
     loadQuotes()
@@ -171,6 +235,8 @@ export function useQuote() {
     updateItem,
     deleteItem,
     deleteQuote,
+    duplicateQuote,
+    bulkDeleteItems,
     loadQuotes
   }
 }

@@ -45,7 +45,8 @@ async fn main() -> std::io::Result<()> {
             .route("/pricing", web::get().to(handlers::get_all_pricing))
             .route("/crawl", web::post().to(handlers::trigger_crawl))
             // Quote endpoints
-            .route("/quotes", web::get().to(handlers::get_quotes))
+            .route("/quotes", web::get().to(handlers::get_quotes_all))  // Legacy: all quotes
+            .route("/quotes/paginated", web::get().to(handlers::get_quotes))  // New: paginated
             .route("/quotes", web::post().to(handlers::create_quote))
             .route("/quotes/{id}", web::get().to(handlers::get_quote))
             .route("/quotes/{id}", web::put().to(handlers::update_quote))

@@ -1,24 +1,43 @@
 import React from 'react'
+import { QuoteFilter } from './SearchFilter'
+import { SkeletonQuoteList } from './Skeleton'
 
 export function QuoteSelector({
   quotes,
   currentQuote,
   onSelect,
   onCreate,
-  onDelete
+  onDelete,
+  onDuplicate,
+  searchTerm,
+  onSearchChange,
+  sortBy,
+  onSortChange,
+  loading
 }) {
   return (
     <div className="quote-selector">
       <div className="quote-selector-header">
         <h3>Quotes</h3>
         <button className="btn btn-primary btn-sm" onClick={onCreate}>
-          + New Quote
+          + New
         </button>
       </div>
 
+      <QuoteFilter
+        searchTerm={searchTerm}
+        onSearchChange={onSearchChange}
+        sortBy={sortBy}
+        onSortChange={onSortChange}
+      />
+
       <div className="quote-list">
-        {quotes.length === 0 ? (
-          <p className="quote-empty">No quotes yet. Create one to get started.</p>
+        {loading ? (
+          <SkeletonQuoteList count={4} />
+        ) : quotes.length === 0 ? (
+          <p className="quote-empty">
+            {searchTerm ? 'No quotes match your search.' : 'No quotes yet. Create one to get started.'}
+          </p>
         ) : (
           quotes.map(quote => (
             <div
@@ -43,6 +62,18 @@ export function QuoteSelector({
           ))
         )}
       </div>
+
+      {currentQuote && (
+        <div className="quote-actions">
+          <button
+            className="quote-action-btn"
+            onClick={onDuplicate}
+            title="Duplicate this quote"
+          >
+            ⎘ Duplicate
+          </button>
+        </div>
+      )}
     </div>
   )
 }

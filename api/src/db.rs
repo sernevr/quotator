@@ -165,6 +165,75 @@ impl Database {
         Ok(quotes)
     }
 
+    pub fn get_quotes_paginated(
+        &self,
+        page: u32,
+        limit: u32,
+        sort_by: &str,
+        sort_order: &str,
+        search: Option<&str>,
+    ) -> Result<(Vec<Quote>, u32)> {
+        // Validate sort_by to prevent SQL injection
+        let valid_sort_fields = ["name", "created_at", "updated_at"];
+        let sort_field = if valid_sort_fields.contains(&sort_by) {
+            sort_by
+        } else {
+            "updated_at"
+        };
+
+        let order = if sort_order.to_lowercase() == "asc" { "ASC" } else { "DESC" };
+        let offset = (page - 1) * limit;
+
+        // Build query based on search
+        let (count_query, data_query, search_param);
+        if let Some(term) = search {
+            search_param = format!("%{}%", term);
+            count_query = "SELECT COUNT(*) FROM quotes WHERE name LIKE ?1".to_string();
+            data_query = format!(
+                "SELECT id, name, created_at, updated_at FROM quotes WHERE name LIKE ?1 ORDER BY {} {} LIMIT ?2 OFFSET ?3",
+                sort_field, order
+            );
+        } else {
+            search_param = String::new();
+            count_query = "SELECT COUNT(*) FROM quotes".to_string();
+            data_query = format!(
+                "SELECT id, name, created_at, updated_at FROM quotes ORDER BY {} {} LIMIT ?1 OFFSET ?2",
+                sort_field, order
+            );
+        }
+
+        // Get total count
+        let total: u32 = if search.is_some() {
+            self.conn.query_row(&count_query, [&search_param], |row| row.get(0))?
+        } else {
+            self.conn.query_row(&count_query, [], |row| row.get(0))?
+        };
+
+        // Get paginated data
+        let mut stmt = self.conn.prepare(&data_query)?;
+        let quotes = if search.is_some() {
+            stmt.query_map(params![&search_param, limit, offset], |row| {
+                Ok(Quote {
+                    id: row.get(0)?,
+                    name: row.get(1)?,
+                    created_at: row.get(2)?,
+                    updated_at: row.get(3)?,
+                })
+            })?.collect::<Result<Vec<_>>>()?
+        } else {
+            stmt.query_map(params![limit, offset], |row| {
+                Ok(Quote {
+                    id: row.get(0)?,
+                    name: row.get(1)?,
+                    created_at: row.get(2)?,
+                    updated_at: row.get(3)?,
+                })
+            })?.collect::<Result<Vec<_>>>()?
+        };
+
+        Ok((quotes, total))
+    }
+
     pub fn get_quote(&self, id: &str) -> Result<Option<Quote>> {
         let mut stmt = self.conn.prepare(
             "SELECT id, name, created_at, updated_at FROM quotes WHERE id = ?1"

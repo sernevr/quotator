@@ -6,6 +6,13 @@
 
 - **Modern Icon Library**: Replaced all Unicode symbols and emoji icons with Lucide React icons for a consistent, professional appearance
 - **Icon Consistency**: All icons now use the same stroke-based design language with appropriate sizing (14-20px)
+- **Enhanced Verbose Mode**: Verbose notifications toggle now shows extra details for more actions:
+  - Quote creation: Shows quote ID
+  - Quote duplication: Shows new quote ID
+  - Resource addition: Shows flavor specs (vCPU/RAM)
+  - Pricing refresh: Shows count of flavors and disk types loaded
+  - CSV export: Shows exported filename
+  - CSV import: Shows file hash
 
 ### Technical Changes
 
@@ -19,6 +26,7 @@
   - `QuoteSelector.jsx`: Trash2, Copy, Plus
   - `App.jsx`: X (modal close)
 - Updated CSS for proper SVG icon alignment in buttons and interactive elements
+- Added verbose flag checks to handleDuplicateQuote, handleAddItem, handleRefreshPricing, handleExportCSV
 
 ### Dependencies
 

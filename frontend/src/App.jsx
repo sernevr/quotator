@@ -133,8 +133,9 @@ function AppContent() {
     const newQuote = await duplicateQuote(currentQuote.id)
     if (newQuote) {
       toast.success('Quote duplicated')
+      if (verbose) toast.info(`New quote ID: ${newQuote.id}`)
     }
-  }, [currentQuote, duplicateQuote, toast])
+  }, [currentQuote, duplicateQuote, toast, verbose])
 
   const handleAddItem = useCallback(async (itemData, count = 1) => {
     const addedItems = []
@@ -150,9 +151,10 @@ function AppContent() {
     }
     if (addedItems.length > 0) {
       toast.success(`${addedItems.length} resource${addedItems.length > 1 ? 's' : ''} added`)
+      if (verbose) toast.info(`${itemData.flavor_name} (${itemData.vcpus}vCPU/${itemData.ram_gb}GB)`)
     }
     return addedItems
-  }, [addItem, toast])
+  }, [addItem, toast, verbose])
 
   const handleDeleteItem = useCallback(async (itemId) => {
     await deleteItem(itemId)
@@ -188,7 +190,8 @@ function AppContent() {
   const handleRefreshPricing = useCallback(async () => {
     await refreshPricing()
     toast.info('Pricing data refreshed')
-  }, [refreshPricing, toast])
+    if (verbose) toast.info(`${flavors.length} flavors, ${diskTypes.length} disk types loaded`)
+  }, [refreshPricing, toast, verbose, flavors.length, diskTypes.length])
 
   // Generate file hash for import deduplication
   const generateHash = async (content) => {
@@ -221,11 +224,13 @@ function AppContent() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `${currentQuote.name.replace(/\s+/g, '_')}_quote.csv`
+    const filename = `${currentQuote.name.replace(/\s+/g, '_')}_quote.csv`
+    a.download = filename
     a.click()
     URL.revokeObjectURL(url)
     toast.success('CSV exported')
-  }, [currentQuote, items, toast])
+    if (verbose) toast.info(`File: ${filename}`)
+  }, [currentQuote, items, toast, verbose])
 
   const handleImportCSV = useCallback(async () => {
     const input = document.createElement('input')

@@ -1,5 +1,75 @@
 # Changelog
 
+## [1.2.0] - 2026-01-16
+
+### New Features
+
+#### Header Improvements
+
+- **Renamed App Title**: Changed from "Quotator" to "HWC Quote Generator" for clarity
+- **Icon-Only Buttons**: Header actions now use compact icon buttons for import, export, analytics, verbosity, dark mode, and help
+- **Verbosity Toggle**: New toggle to control toast notification detail level. When enabled, shows additional context like quote IDs and file hashes
+- **Import/Export in Header**: Moved CSV import/export buttons to header for better accessibility
+
+#### Layout Improvements
+
+- **Collapsible Sidebar**: Toggle sidebar visibility with button or `Ctrl+B` shortcut. Useful for maximizing content area
+- **Collapsible Resource Form**: "Add Resource" section can now be collapsed/expanded. Toggle with `R` shortcut
+- **Cost Analytics Modal**: Cost breakdown chart moved to modal popup, accessible via analytics icon or `A` shortcut
+- **Summary Cards Above Table**: Resource summary (vCPUs, RAM, Storage, Cost) displayed above the quote table for quick reference
+
+#### Pricing Display Improvements
+
+- **Monthly Payment for Reserved**: For 1-Year and 3-Year reserved instances, now shows monthly payment amount alongside total cost (e.g., "$150.00/mo" with "(1800.00 total)")
+- **Table Footer Monthly View**: Summary row displays monthly cost for reserved instances
+
+#### Form Improvements
+
+- **Count Input**: Add multiple identical resources at once with count field (1-100). Codes auto-increment with suffix (-01, -02, etc.)
+- **Auto-Increment Code**: When code ends with number (e.g., WS-001), next batch auto-increments (WS-002)
+- **Auto-Generate Description**: Description auto-populates from selected specs. Toggle auto-generation with ⟳ button
+- **Description Beside Code**: Code and description fields now on same row for compact layout
+
+#### Table Improvements
+
+- **Collapsible Specs Columns**: Toggle vCPUs/RAM/Disk columns visibility with "Show Specs"/"Hide Specs" button
+- **Inline Edit**: Edit resource instance type and disk directly in table row. Click ✎ to enter edit mode, ✓ to save, ✕ to cancel
+- **Quote UUID Display**: Shows quote ID in greyed-out style below quote name for reference
+
+#### Import Improvements
+
+- **Hash-Based Deduplication**: Imported files are hashed (SHA-256) to prevent duplicate imports in same session
+- **Merge or Create**: When importing, choose to merge into current quote or create new quote
+- **Import Shortcut**: `Ctrl+I` keyboard shortcut for quick CSV import
+
+### Updated Keyboard Shortcuts
+
+- `N` - Create new quote
+- `Ctrl+D` - Duplicate current quote
+- `Ctrl+E` - Export to CSV
+- `Ctrl+I` - Import CSV (new)
+- `Ctrl+B` - Toggle sidebar (new)
+- `R` - Toggle resource form (new)
+- `A` - Toggle analytics modal (new)
+- `/` - Focus search input
+- `?` - Show keyboard shortcuts help
+- `Esc` - Close dialogs
+
+### Technical Changes
+
+- Added new React component: `QuoteSummary.jsx` for summary cards section
+- Added `VerbosityContext` in App.jsx for controlling toast detail level
+- Updated `Header.jsx` with icon buttons, verbosity toggle, import/export
+- Updated `ResourceForm.jsx` with count input, auto-generate description
+- Updated `QuoteTable.jsx` with inline editing, collapsible specs, monthly pricing display
+- Extended CSS with ~200 lines for new features (sidebar toggle, collapsible sections, inline edit, etc.)
+
+### Dependencies
+
+No new dependencies added.
+
+---
+
 ## [1.1.0] - 2026-01-16
 
 ### New Features

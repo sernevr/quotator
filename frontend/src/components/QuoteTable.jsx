@@ -4,6 +4,7 @@ import { EmptyState } from './EmptyState'
 export function QuoteTable({
   items,
   quoteName,
+  quoteId,
   onUpdateQuoteName,
   onUpdateItem,
   onDeleteItem,
@@ -12,10 +13,12 @@ export function QuoteTable({
   onSelectItem,
   onSelectAll,
   onBulkDelete,
-  onExportCSV,
-  onDuplicate
+  flavors,
+  diskTypes
 }) {
-  const [showExportMenu, setShowExportMenu] = useState(false)
+  const [showSpecs, setShowSpecs] = useState(true)
+  const [editingRow, setEditingRow] = useState(null)
+  const [editData, setEditData] = useState({})
 
   const getPricingLabel = () => {
     switch (pricingMode) {
@@ -27,10 +30,45 @@ export function QuoteTable({
 
   const getMultiplier = () => {
     switch (pricingMode) {
-      case 'yearly1': return { hours: 720 * 12, discount: 0.6 }
-      case 'yearly3': return { hours: 720 * 12 * 3, discount: 0.4 }
-      default: return { hours: 720, discount: 1.0 }
+      case 'yearly1': return { hours: 720 * 12, discount: 0.6, months: 12 }
+      case 'yearly3': return { hours: 720 * 12 * 3, discount: 0.4, months: 36 }
+      default: return { hours: 720, discount: 1.0, months: 1 }
     }
+  }
+
+  const startEdit = (item) => {
+    setEditingRow(item.id)
+    setEditData({
+      flavor_id: item.flavor_id,
+      disk_type_id: item.disk_type_id || '',
+      disk_size_gb: item.disk_size_gb || 100
+    })
+  }
+
+  const saveEdit = (itemId) => {
+    const flavor = flavors?.find(f => f.id === editData.flavor_id)
+    const disk = diskTypes?.find(d => d.id === editData.disk_type_id)
+
+    if (flavor) {
+      onUpdateItem(itemId, {
+        flavor_id: editData.flavor_id,
+        flavor_name: flavor.name,
+        vcpus: flavor.vcpus,
+        ram_gb: flavor.ram_gb,
+        flavor_price: flavor.price_hourly,
+        disk_type_id: editData.disk_type_id || null,
+        disk_type_name: disk?.name || null,
+        disk_size_gb: editData.disk_type_id ? editData.disk_size_gb : null,
+        disk_price: disk ? disk.price_per_gb * editData.disk_size_gb : null
+      })
+    }
+    setEditingRow(null)
+    setEditData({})
+  }
+
+  const cancelEdit = () => {
+    setEditingRow(null)
+    setEditData({})
   }
 
   const summary = useMemo(() => {
@@ -69,6 +107,8 @@ export function QuoteTable({
   const allSelected = items.length > 0 && selectedItems.size === items.length
   const someSelected = selectedItems.size > 0 && selectedItems.size < items.length
 
+  const { months } = getMultiplier()
+
   if (items.length === 0) {
     return (
       <div className="quote-table-container">
@@ -80,6 +120,7 @@ export function QuoteTable({
             className="quote-name-input"
             placeholder="Quote name..."
           />
+          {quoteId && <span className="quote-uuid">{quoteId}</span>}
         </div>
         <EmptyState type="items" />
       </div>
@@ -89,35 +130,24 @@ export function QuoteTable({
   return (
     <div className="quote-table-container">
       <div className="quote-header">
-        <input
-          type="text"
-          value={quoteName}
-          onChange={(e) => onUpdateQuoteName(e.target.value)}
-          className="quote-name-input"
-          placeholder="Quote name..."
-        />
+        <div className="quote-header-main">
+          <input
+            type="text"
+            value={quoteName}
+            onChange={(e) => onUpdateQuoteName(e.target.value)}
+            className="quote-name-input"
+            placeholder="Quote name..."
+          />
+          {quoteId && <span className="quote-uuid">{quoteId}</span>}
+        </div>
         <div className="quote-header-actions">
-          <div className="export-dropdown">
-            <button
-              className="btn btn-sm btn-secondary"
-              onClick={() => setShowExportMenu(!showExportMenu)}
-            >
-              ↓ Export
-            </button>
-            {showExportMenu && (
-              <div className="export-menu">
-                <button
-                  className="export-menu-item"
-                  onClick={() => {
-                    onExportCSV()
-                    setShowExportMenu(false)
-                  }}
-                >
-                  Export as CSV
-                </button>
-              </div>
-            )}
-          </div>
+          <button
+            className={`btn btn-sm ${showSpecs ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => setShowSpecs(!showSpecs)}
+            title="Toggle specs column"
+          >
+            {showSpecs ? 'Hide Specs' : 'Show Specs'}
+          </button>
         </div>
       </div>
 
@@ -151,13 +181,20 @@ export function QuoteTable({
             <th>Hostname</th>
             <th>Code</th>
             <th>Instance Type</th>
-            <th>vCPUs</th>
-            <th>RAM (GB)</th>
-            <th>Disk Type</th>
-            <th>Disk (GB)</th>
+            {showSpecs && (
+              <>
+                <th>vCPUs</th>
+                <th>RAM (GB)</th>
+                <th>Disk Type</th>
+                <th>Disk (GB)</th>
+              </>
+            )}
             <th>Description</th>
             <th>Hourly ($)</th>
-            <th>{getPricingLabel()} ($)</th>
+            <th>
+              {getPricingLabel()} ($)
+              {months > 1 && <span className="th-subtext">/mo</span>}
+            </th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -165,10 +202,12 @@ export function QuoteTable({
           {items.map((item, index) => {
             const hourlyTotal = item.flavor_price || 0
             const periodTotal = calculateItemPeriodCost(item)
+            const monthlyPayment = months > 1 ? periodTotal / months : periodTotal
             const isSelected = selectedItems.has(item.id)
+            const isEditing = editingRow === item.id
 
             return (
-              <tr key={item.id} className={isSelected ? 'selected-row' : ''}>
+              <tr key={item.id} className={`${isSelected ? 'selected-row' : ''} ${isEditing ? 'editing-row' : ''}`}>
                 <td>
                   <input
                     type="checkbox"
@@ -194,11 +233,50 @@ export function QuoteTable({
                     className="table-input table-input-sm"
                   />
                 </td>
-                <td>{item.flavor_name}</td>
-                <td className="text-center">{item.vcpus}</td>
-                <td className="text-center">{item.ram_gb}</td>
-                <td>{item.disk_type_name || '-'}</td>
-                <td className="text-center">{item.disk_size_gb || '-'}</td>
+                <td>
+                  {isEditing ? (
+                    <select
+                      value={editData.flavor_id}
+                      onChange={(e) => setEditData({ ...editData, flavor_id: e.target.value })}
+                      className="table-select"
+                    >
+                      {flavors?.map(f => (
+                        <option key={f.id} value={f.id}>{f.name}</option>
+                      ))}
+                    </select>
+                  ) : item.flavor_name}
+                </td>
+                {showSpecs && (
+                  <>
+                    <td className="text-center">{item.vcpus}</td>
+                    <td className="text-center">{item.ram_gb}</td>
+                    <td>
+                      {isEditing ? (
+                        <select
+                          value={editData.disk_type_id}
+                          onChange={(e) => setEditData({ ...editData, disk_type_id: e.target.value })}
+                          className="table-select"
+                        >
+                          <option value="">No disk</option>
+                          {diskTypes?.map(d => (
+                            <option key={d.id} value={d.id}>{d.name}</option>
+                          ))}
+                        </select>
+                      ) : (item.disk_type_name || '-')}
+                    </td>
+                    <td className="text-center">
+                      {isEditing && editData.disk_type_id ? (
+                        <input
+                          type="number"
+                          value={editData.disk_size_gb}
+                          onChange={(e) => setEditData({ ...editData, disk_size_gb: parseInt(e.target.value) || 0 })}
+                          className="table-input table-input-sm"
+                          min="10"
+                        />
+                      ) : (item.disk_size_gb || '-')}
+                    </td>
+                  </>
+                )}
                 <td>
                   <input
                     type="text"
@@ -208,15 +286,48 @@ export function QuoteTable({
                   />
                 </td>
                 <td className="text-right">{hourlyTotal.toFixed(4)}</td>
-                <td className="text-right">{periodTotal.toFixed(2)}</td>
-                <td>
-                  <button
-                    className="btn-icon btn-delete"
-                    onClick={() => onDeleteItem(item.id)}
-                    title="Remove resource"
-                  >
-                    ×
-                  </button>
+                <td className="text-right">
+                  <span className="price-main">{monthlyPayment.toFixed(2)}</span>
+                  {months > 1 && (
+                    <span className="price-total">({periodTotal.toFixed(2)} total)</span>
+                  )}
+                </td>
+                <td className="actions-cell">
+                  {isEditing ? (
+                    <>
+                      <button
+                        className="btn-icon btn-save"
+                        onClick={() => saveEdit(item.id)}
+                        title="Save changes"
+                      >
+                        ✓
+                      </button>
+                      <button
+                        className="btn-icon btn-cancel"
+                        onClick={cancelEdit}
+                        title="Cancel editing"
+                      >
+                        ✕
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        className="btn-icon btn-edit"
+                        onClick={() => startEdit(item)}
+                        title="Edit resource specs"
+                      >
+                        ✎
+                      </button>
+                      <button
+                        className="btn-icon btn-delete"
+                        onClick={() => onDeleteItem(item.id)}
+                        title="Remove resource"
+                      >
+                        ×
+                      </button>
+                    </>
+                  )}
                 </td>
               </tr>
             )
@@ -226,44 +337,28 @@ export function QuoteTable({
           <tr className="summary-row">
             <td></td>
             <td colSpan="4"><strong>Total ({summary.itemCount} items)</strong></td>
-            <td className="text-center"><strong>{summary.totalVCPUs}</strong></td>
-            <td className="text-center"><strong>{summary.totalRAM}</strong></td>
-            <td></td>
-            <td className="text-center"><strong>{summary.totalDisk}</strong></td>
+            {showSpecs && (
+              <>
+                <td className="text-center"><strong>{summary.totalVCPUs}</strong></td>
+                <td className="text-center"><strong>{summary.totalRAM}</strong></td>
+                <td></td>
+                <td className="text-center"><strong>{summary.totalDisk}</strong></td>
+              </>
+            )}
             <td></td>
             <td className="text-right"><strong>{summary.hourlyFlavorCost.toFixed(4)}</strong></td>
-            <td className="text-right"><strong>{summary.totalPeriodCost.toFixed(2)}</strong></td>
+            <td className="text-right">
+              <strong>
+                {months > 1 ? (summary.totalPeriodCost / months).toFixed(2) : summary.totalPeriodCost.toFixed(2)}
+              </strong>
+              {months > 1 && (
+                <span className="price-total">({summary.totalPeriodCost.toFixed(2)} total)</span>
+              )}
+            </td>
             <td></td>
           </tr>
         </tfoot>
       </table>
-
-      <div className="quote-summary">
-        <div className="summary-card">
-          <span className="summary-label">Total Resources</span>
-          <span className="summary-value">{summary.itemCount}</span>
-        </div>
-        <div className="summary-card">
-          <span className="summary-label">Total vCPUs</span>
-          <span className="summary-value">{summary.totalVCPUs}</span>
-        </div>
-        <div className="summary-card">
-          <span className="summary-label">Total RAM</span>
-          <span className="summary-value">{summary.totalRAM} GB</span>
-        </div>
-        <div className="summary-card">
-          <span className="summary-label">Total Storage</span>
-          <span className="summary-value">{summary.totalDisk} GB</span>
-        </div>
-        <div className="summary-card highlight">
-          <span className="summary-label">Est. {getPricingLabel()} Cost</span>
-          <span className="summary-value">${summary.totalPeriodCost.toFixed(2)}</span>
-          <span className="pricing-label">
-            {pricingMode === 'yearly1' && '40% Discount Applied'}
-            {pricingMode === 'yearly3' && '60% Discount Applied'}
-          </span>
-        </div>
-      </div>
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { pricingApi } from '../utils/api'
 
 export function ResourceForm({
@@ -13,12 +13,28 @@ export function ResourceForm({
   const [hostname, setHostname] = useState('')
   const [codeNumber, setCodeNumber] = useState('')
   const [description, setDescription] = useState('')
+  const [count, setCount] = useState(1)
+  const [autoDescription, setAutoDescription] = useState(true)
 
   // Best match state
   const [searchCpu, setSearchCpu] = useState('')
   const [searchRam, setSearchRam] = useState('')
   const [matchResults, setMatchResults] = useState([])
   const [searching, setSearching] = useState(false)
+
+  // Auto-generate description when flavor or disk changes
+  useEffect(() => {
+    if (!autoDescription) return
+    const flavor = flavors.find(f => f.id === selectedFlavor)
+    const disk = diskTypes.find(d => d.id === selectedDisk)
+    if (flavor) {
+      let desc = `${flavor.name} - ${flavor.vcpus}vCPU/${flavor.ram_gb}GB`
+      if (disk && diskSize) {
+        desc += ` + ${diskSize}GB ${disk.name}`
+      }
+      setDescription(desc)
+    }
+  }, [selectedFlavor, selectedDisk, diskSize, flavors, diskTypes, autoDescription])
 
   const getFlavorPrice = (flavor) => {
     if (!flavor) return 0
@@ -93,13 +109,20 @@ export function ResourceForm({
       description: description
     }
 
-    onAddItem(item)
+    onAddItem(item, count)
 
-    // Reset form
+    // Reset form but auto-increment code if pattern detected
+    if (codeNumber) {
+      const match = codeNumber.match(/^(.*?)(\d+)$/)
+      if (match) {
+        const nextNum = parseInt(match[2]) + count
+        setCodeNumber(`${match[1]}${String(nextNum).padStart(match[2].length, '0')}`)
+      }
+    }
     setHostname('')
-    setCodeNumber('')
-    setDescription('')
-  }, [selectedFlavor, selectedDisk, diskSize, hostname, codeNumber, description, flavors, diskTypes, onAddItem])
+    setCount(1)
+    if (!autoDescription) setDescription('')
+  }, [selectedFlavor, selectedDisk, diskSize, hostname, codeNumber, description, count, flavors, diskTypes, onAddItem, autoDescription])
 
   return (
     <div className="resource-form">
@@ -242,24 +265,48 @@ export function ResourceForm({
             placeholder="e.g., WS-001"
           />
         </div>
-      </div>
 
-      <div className="form-row">
-        <div className="form-group form-group-full">
-          <label>Description</label>
+        <div className="form-group">
+          <label>
+            Description
+            <button
+              type="button"
+              className={`auto-toggle ${autoDescription ? 'active' : ''}`}
+              onClick={() => setAutoDescription(!autoDescription)}
+              title={autoDescription ? 'Auto-generate ON' : 'Auto-generate OFF'}
+            >
+              ⟳
+            </button>
+          </label>
           <input
             type="text"
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={(e) => {
+              setDescription(e.target.value)
+              setAutoDescription(false)
+            }}
             className="form-input"
-            placeholder="e.g., Production web server"
+            placeholder={autoDescription ? 'Auto-generated from specs' : 'e.g., Production web server'}
           />
         </div>
       </div>
 
-      <button className="btn btn-primary" onClick={handleAdd}>
-        + Add Resource
-      </button>
+      <div className="form-row form-row-actions">
+        <div className="form-group form-group-sm">
+          <label>Count</label>
+          <input
+            type="number"
+            value={count}
+            onChange={(e) => setCount(Math.max(1, parseInt(e.target.value) || 1))}
+            className="form-input"
+            min="1"
+            max="100"
+          />
+        </div>
+        <button className="btn btn-primary" onClick={handleAdd}>
+          + Add {count > 1 ? `${count} Resources` : 'Resource'}
+        </button>
+      </div>
     </div>
   )
 }
